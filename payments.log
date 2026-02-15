@@ -1,0 +1,2 @@
+Initiating STK for 254717828927 amount 10.00
+Daraja Response: {'requestId': '7481-4bcd-ba0d-444300465f847166', 'errorCode': '400.002.02', 'errorMessage': 'Bad Request - Invalid CallBackURL'}

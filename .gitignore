@@ -1,0 +1,10 @@
+.env
+notes.txt
+venv
+*.zip
+*.sql
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+data.json
