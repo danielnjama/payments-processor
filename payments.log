@@ -1,2 +1,10 @@
 Initiating STK for 254717828927 amount 10.00
 Daraja Response: {'requestId': '7481-4bcd-ba0d-444300465f847166', 'errorCode': '400.002.02', 'errorMessage': 'Bad Request - Invalid CallBackURL'}
+Initiating STK for 254717828927 amount 10.00
+Daraja Response: {'requestId': 'f4b4-474c-a808-b0862ff9e6f725476', 'errorCode': '500.001.1001', 'errorMessage': 'Merchant does not exist'}
+Initiating STK for 254717828927 amount 10.00
+Daraja Response: {'MerchantRequestID': '3951-46d1-a33d-f3ee78f1412a15233', 'CheckoutRequestID': 'ws_CO_15022026075729187717828927', 'ResponseCode': '0', 'ResponseDescription': 'Success. Request accepted for processing', 'CustomerMessage': 'Success. Request accepted for processing'}
+Initiating STK for 254717828927 amount 1.00
+Daraja Response: {'MerchantRequestID': 'f4b4-474c-a808-b0862ff9e6f725548', 'CheckoutRequestID': 'ws_CO_15022026080024298717828927', 'ResponseCode': '0', 'ResponseDescription': 'Success. Request accepted for processing', 'CustomerMessage': 'Success. Request accepted for processing'}
+Initiating STK for 254717828927 amount 1.00
+Daraja Response: {'MerchantRequestID': '7481-4bcd-ba0d-444300465f847581', 'CheckoutRequestID': 'ws_CO_15022026080244409717828927', 'ResponseCode': '0', 'ResponseDescription': 'Success. Request accepted for processing', 'CustomerMessage': 'Success. Request accepted for processing'}
