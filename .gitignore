@@ -8,3 +8,5 @@ __pycache__/
 *.py[cod]
 *$py.class
 data.json
+db.sqlite3
+payments.log
