@@ -17,3 +17,4 @@ class APIKeyAuthentication(BaseAuthentication):
             raise AuthenticationFailed("Invalid API Key")
 
         return (app, None)
+        # return bool(request.user)

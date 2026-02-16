@@ -16,6 +16,7 @@ from payments.models import Payment
 from payments.services.daraja import DarajaService
 from .authentication import APIKeyAuthentication
 from rest_framework.permissions import IsAuthenticated
+from .permissions import IsAPIKeyAuthenticated
 
 
 
@@ -70,7 +71,7 @@ def c2b_confirmation(request):
 
 class STKPushView(APIView):
     authentication_classes = [APIKeyAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAPIKeyAuthenticated]
 
     def post(self, request):
         serializer = STKPushSerializer(data=request.data)
@@ -167,7 +168,7 @@ class VerifyPaymentView(APIView):
     - phone + amount (fallback)
     """
     authentication_classes = [APIKeyAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAPIKeyAuthenticated]
 
     def get(self, request):
         receipt = request.GET.get("receipt")
@@ -239,7 +240,7 @@ class ClaimPaymentView(APIView):
     Mark payment as claimed after use.
     """
     authentication_classes = [APIKeyAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAPIKeyAuthenticated]
 
     def post(self, request):
         app = request.user

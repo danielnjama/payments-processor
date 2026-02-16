@@ -1,9 +1,10 @@
 from django.urls import path
 from . import views
+from . views import STKPushView
 
 urlpatterns = [
     # 🔹 STK Push
-    path("stk-push/", views.STKPushView.as_view(), name="stk-push"),
+    path("stk-push/", STKPushView.as_view(), name="stk-push"),
 
     # 🔹 STK Callback (Daraja)
     path("mpesa/stk-callback/", views.stk_callback, name="stk-callback"),
