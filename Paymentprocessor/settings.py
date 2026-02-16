@@ -146,17 +146,42 @@ MPESA_ENVIRONMENT = config("MPESA_ENVIRONMENT")
 
 
 
+##############################################
+## logs management start ########################
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+# create logs directory if it doesn't exist
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+
+    "formatters": {
+        "verbose": {
+            "format": "{asctime} | {levelname} | {name} | {message}",
+            "style": "{",
+        },
+    },
+
     "handlers": {
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": os.path.join(BASE_DIR, "payments.log"),
+            "filename": os.path.join(LOG_DIR, "payments.log"),
+            "formatter": "verbose",
         },
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOG_DIR, "errors.log"),
+            "formatter": "verbose",
+        },
+
+
     },
+
     "loggers": {
         "payments": {
             "handlers": ["file"],
@@ -165,3 +190,5 @@ LOGGING = {
         },
     },
 }
+## logs management end ########################
+##############################################

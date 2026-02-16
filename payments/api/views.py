@@ -8,9 +8,57 @@ from payments.models import Payment
 from payments.services.daraja import DarajaService
 from payments.models import Payment
 from .serializers import STKPushSerializer
+from django.http import JsonResponse
+import json
 
 
 logger = logging.getLogger("payments")
+
+
+
+@csrf_exempt
+def c2b_validation(request):
+    """
+    Safaricom sends transaction details for validation.
+    Return accept or reject.
+    """
+    data = json.loads(request.body)
+
+    # print("VALIDATION REQUEST:", data)
+    logger.info(f"C2B VALIDATION REQUEST: {data}")
+
+
+    # accept all payments for now
+    return JsonResponse({
+        "ResultCode": 0,
+        "ResultDesc": "Accepted"
+    })
+
+
+@csrf_exempt
+def c2b_confirmation(request):
+    """
+    Safaricom sends confirmation after payment is successful.
+    Save payment here.
+    """
+    data = json.loads(request.body)
+
+    # print("CONFIRMATION DATA:", data)
+    logger.info(f"C2B CONFIRMATION RECEIVED: {data}")
+
+
+    Payment.objects.create(
+        phone_number=data.get("MSISDN"),
+        amount=data.get("TransAmount"),
+        reference=data.get("BillRefNumber"),
+        mpesa_receipt=data.get("TransID"),
+        status="COMPLETED"
+    )
+    logger.info(f"PAYMENT RECORDED: Receipt={data.get('TransID')} Amount={data.get('TransAmount')}")
+
+
+    return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
+
 
 
 
