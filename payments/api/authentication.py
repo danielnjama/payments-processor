@@ -9,7 +9,7 @@ class APIKeyAuthentication(BaseAuthentication):
         api_key = request.headers.get("X-API-KEY")
 
         if not api_key:
-            return None
+            raise AuthenticationFailed("API key required")
 
         try:
             app = ExternalApp.objects.get(api_key=api_key, is_active=True)
