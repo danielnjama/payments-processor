@@ -4,6 +4,9 @@ from rest_framework import status
 import logging
 from rest_framework.decorators import api_view
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny
+
 
 from .serializers import STKPushSerializer
 from django.http import JsonResponse
@@ -114,6 +117,8 @@ class STKPushView(APIView):
 
 @csrf_exempt
 @api_view(["POST"])
+@authentication_classes([])
+@permission_classes([])
 def stk_callback(request):
 
     data = request.data
