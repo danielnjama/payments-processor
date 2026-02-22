@@ -70,8 +70,6 @@ def c2b_confirmation(request):
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
 
 
-#
-
 class STKPushView(APIView):
     authentication_classes = [APIKeyAuthentication]
     permission_classes = [IsAPIKeyAuthenticated]
