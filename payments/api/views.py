@@ -15,7 +15,7 @@ from datetime import timedelta
 from django.utils import timezone
 import json
 
-from payments.models import Payment
+from payments.models import Payment, ExternalApp
 from payments.services.daraja import DarajaService
 from .authentication import APIKeyAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -82,6 +82,10 @@ class STKPushView(APIView):
 
         data = serializer.validated_data
         external_app = request.user  # This is ExternalApp (from APIKeyAuthentication)
+        # try:
+        #     app_name = ExternalApp.objects.get(api_key=external_app)
+        # except:
+        #     pass
 
         daraja = DarajaService()
 
@@ -96,6 +100,7 @@ class STKPushView(APIView):
         payment = Payment.objects.create(
             external_reference=data["reference"],
             app_name=external_app.name,
+            app=external_app,
             phone_number=data["phone_number"],
             amount=data["amount"],
             payment_type="STK",

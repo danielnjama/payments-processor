@@ -11,3 +11,4 @@ data.json
 db.sqlite3
 payments.log
 logs/*
+features.txt
