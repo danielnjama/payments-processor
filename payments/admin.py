@@ -1,4 +1,5 @@
 from django.contrib import admin
+from rangefilter.filters import DateRangeFilter
 from .models import Payment, ExternalApp
 
 
@@ -15,6 +16,7 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = (
        "mpesa_receipt_number",
         "external_reference",
+        "payment_type",
         "app_name",
         "phone_number",
         "amount",
@@ -23,7 +25,7 @@ class PaymentAdmin(admin.ModelAdmin):
         "created_at",
     )
 
-    list_filter = ("status", "claimed", "payment_type", "created_at")
+    list_filter = ("status", "claimed", "payment_type", ("created_at", DateRangeFilter))
     search_fields = (
         "external_reference",
         "phone_number",

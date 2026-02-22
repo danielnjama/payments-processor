@@ -31,7 +31,7 @@ class Payment(models.Model):
 
     PAYMENT_TYPE_CHOICES = (
         ("STK", "STK Push"),
-        ("C2B", "Customer to Business"),
+        ("C2B", "C2B"),
     )
 
     STATUS_CHOICES = (
@@ -57,7 +57,7 @@ class Payment(models.Model):
     checkout_request_id = models.CharField(max_length=100, null=True, blank=True)
     merchant_request_id = models.CharField(max_length=100, null=True, blank=True)
 
-    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES)
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES,default='C2B')
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING")
 

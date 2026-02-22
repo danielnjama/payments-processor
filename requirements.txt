@@ -3,3 +3,4 @@ django-cors-headers
 djangorestframework
 python-decouple
 requests
+django-admin-rangefilter
