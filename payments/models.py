@@ -45,7 +45,7 @@ class Payment(models.Model):
     external_reference = models.CharField(max_length=100, null=True, blank=True)
     # this links the payment to your external application
 
-    app_name = models.CharField(max_length=100)
+    app_name = models.CharField(max_length=100,blank=True)
     # Which app sent this payment request?
 
     phone_number = models.CharField(max_length=15)

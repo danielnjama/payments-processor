@@ -61,7 +61,7 @@ def c2b_confirmation(request):
         phone_number=data.get("MSISDN"),
         amount=data.get("TransAmount"),
         reference=data.get("BillRefNumber"),
-        mpesa_receipt=data.get("TransID"),
+        mpesa_receipt_number=data.get("TransID"),
         status="COMPLETED"
     )
     logger.info(f"PAYMENT RECORDED: Receipt={data.get('TransID')} Amount={data.get('TransAmount')}")
@@ -82,10 +82,6 @@ class STKPushView(APIView):
 
         data = serializer.validated_data
         external_app = request.user  # This is ExternalApp (from APIKeyAuthentication)
-        # try:
-        #     app_name = ExternalApp.objects.get(api_key=external_app)
-        # except:
-        #     pass
 
         daraja = DarajaService()
 
@@ -165,82 +161,138 @@ def stk_callback(request):
 
     return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
 
-
 class VerifyPaymentView(APIView):
     """
-    Verify if a payment has been completed.
+    Universal payment verification.
 
-    Supports:
-    - receipt number (highest priority)
-    - reference
-    - phone + amount (fallback)
+    Priority:
+    1. receipt + phone (best)
+    2. receipt only
+    3. reference
     """
+
     authentication_classes = [APIKeyAuthentication]
     permission_classes = [IsAPIKeyAuthenticated]
 
     def get(self, request):
+        app = request.user  # ExternalApp from API key
+
         receipt = request.GET.get("receipt")
         reference = request.GET.get("reference")
         phone = request.GET.get("phone")
-        amount = request.GET.get("amount")
 
-        payment = None
-
-        # ✅ 1. Receipt lookup (MOST reliable)
-        if receipt:
-            payment = Payment.objects.filter(
-                mpesa_receipt=receipt,
-                status="COMPLETED"
-            ).first()
-
-        # ✅ 2. Reference lookup
-        elif reference:
-            payment = Payment.objects.filter(
-                reference=reference,
-                status="COMPLETED"
-            ).first()
-
-        # ✅ 3. Phone + Amount fallback (recent payments only)
-        elif phone and amount:
-            try:
-                amount = float(amount)
-            except ValueError:
-                return Response(
-                    {"error": "Invalid amount"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            recent_time = now() - timedelta(minutes=10)
-
-            payment = Payment.objects.filter(
-                phone_number=phone,
-                amount=amount,
-                status="COMPLETED",
-                created_at__gte=recent_time
-            ).order_by("-created_at").first()
-
-        else:
+        if not receipt and not reference:
             return Response(
-                {"error": "Provide receipt, reference, or phone & amount"},
+                {"error": "Provide receipt or reference"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        payment = Payment.objects.filter(
+            app=app,
+            status="COMPLETED"
+        )
+
+        # 1️⃣ Receipt + optional phone
+        if receipt:
+            payment = payment.filter(mpesa_receipt_number=receipt)
+
+            if phone:
+                payment = payment.filter(phone_number=phone)
+
+            payment = payment.first()
+
+        # 2️⃣ Reference lookup (STK initiated payments)
+        elif reference:
+            payment = payment.filter(external_reference=reference).first()
+
         if not payment:
             return Response({"paid": False})
-
-        logger.info(
-            f"PAYMENT VERIFIED: receipt={payment.mpesa_receipt} ref={payment.reference}"
-        )
 
         return Response({
             "paid": True,
             "amount": payment.amount,
             "phone": payment.phone_number,
-            "receipt": payment.mpesa_receipt,
+            "receipt": payment.mpesa_receipt_number,
             "reference": payment.reference,
             "claimed": payment.claimed,
             "date": payment.created_at,
         })
+
+# class VerifyPaymentView(APIView):
+#     """
+#     Verify if a payment has been completed.
+
+#     Supports:
+#     - receipt number (highest priority)
+#     - reference
+#     - phone + amount (fallback)
+#     """
+#     authentication_classes = [APIKeyAuthentication]
+#     permission_classes = [IsAPIKeyAuthenticated]
+
+#     def get(self, request):
+#         receipt = request.GET.get("receipt")
+#         reference = request.GET.get("reference")
+#         phone = request.GET.get("phone")
+#         amount = request.GET.get("amount")
+
+#         payment = None
+
+#         # ✅ 1. Receipt lookup (MOST reliable)
+#         if receipt:
+#             payment = Payment.objects.filter(
+#                 mpesa_receipt=receipt,
+#                 status="COMPLETED"
+#             ).first()
+
+#         # ✅ 2. Reference lookup
+#         elif reference:
+#             payment = Payment.objects.filter(
+#                 reference=reference,
+#                 status="COMPLETED"
+#             ).first()
+
+#         # ✅ 3. Phone + Amount fallback (recent payments only)
+#         elif phone and amount:
+#             try:
+#                 amount = float(amount)
+#             except ValueError:
+#                 return Response(
+#                     {"error": "Invalid amount"},
+#                     status=status.HTTP_400_BAD_REQUEST
+#                 )
+
+#             recent_time = now() - timedelta(minutes=10)
+
+#             payment = Payment.objects.filter(
+#                 phone_number=phone,
+#                 amount=amount,
+#                 status="COMPLETED",
+#                 created_at__gte=recent_time
+#             ).order_by("-created_at").first()
+
+#         else:
+#             return Response(
+#                 {"error": "Provide receipt, reference, or phone & amount"},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
+#         if not payment:
+#             return Response({"paid": False})
+
+#         logger.info(
+#             f"PAYMENT VERIFIED: receipt={payment.mpesa_receipt} ref={payment.reference}"
+#         )
+
+#         return Response({
+#             "paid": True,
+#             "amount": payment.amount,
+#             "phone": payment.phone_number,
+#             "receipt": payment.mpesa_receipt,
+#             "reference": payment.reference,
+#             "claimed": payment.claimed,
+#             "date": payment.created_at,
+#         })
     
 
 class ClaimPaymentView(APIView):
