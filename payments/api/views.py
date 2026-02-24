@@ -189,7 +189,7 @@ class VerifyPaymentView(APIView):
 
         payment = Payment.objects.filter(
             app=app,
-            status="COMPLETED"
+            status="SUCCESS"
         )
 
         # 1️⃣ Receipt + optional phone
@@ -213,7 +213,7 @@ class VerifyPaymentView(APIView):
             "amount": payment.amount,
             "phone": payment.phone_number,
             "receipt": payment.mpesa_receipt_number,
-            "reference": payment.reference,
+            "reference": payment.external_reference,
             "claimed": payment.claimed,
             "date": payment.created_at,
         })

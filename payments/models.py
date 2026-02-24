@@ -35,9 +35,9 @@ class Payment(models.Model):
     )
 
     STATUS_CHOICES = (
-        ("PENDING", "Pending"),
-        ("SUCCESS", "Success"),
-        ("FAILED", "Failed"),
+        ("PENDING", "PENDING"),
+        ("SUCCESS", "SUCCESS"),
+        ("FAILED", "FAILED"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
