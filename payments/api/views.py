@@ -49,23 +49,35 @@ def c2b_validation(request):
 def c2b_confirmation(request):
     """
     Safaricom sends confirmation after payment is successful.
-    Save payment here.
+    Save payment here and assign to Admin Shop.
     """
     data = json.loads(request.body)
 
-    # print("CONFIRMATION DATA:", data)
     logger.info(f"C2B CONFIRMATION RECEIVED: {data}")
 
 
+    # ✅ get or create default admin shop
+    admin_app, _ = ExternalApp.objects.get_or_create(
+        name="ADMIN_SHOP",
+        defaults={
+            "is_active": True,
+        },
+    )
+
     Payment.objects.create(
+        app=admin_app,  # ✅ assign owner
         phone_number=data.get("MSISDN"),
         amount=data.get("TransAmount"),
-        reference=data.get("BillRefNumber"),
+        external_reference=data.get("BillRefNumber"),
         mpesa_receipt_number=data.get("TransID"),
-        status="COMPLETED"
+        payment_type="C2B",
+        status="SUCCESS",
+        raw_callback=data,
     )
-    logger.info(f"PAYMENT RECORDED: Receipt={data.get('TransID')} Amount={data.get('TransAmount')}")
 
+    logger.info(
+        f"PAYMENT RECORDED: Receipt={data.get('TransID')} Amount={data.get('TransAmount')}"
+    )
 
     return JsonResponse({"ResultCode": 0, "ResultDesc": "Success"})
 
@@ -219,15 +231,15 @@ class VerifyPaymentView(APIView):
         })
 
 
-
-
 class ClaimPaymentView(APIView):
     """
     Mark payment as claimed.
 
     Supports:
-    - receipt (works for STK & C2B)
+    - receipt (STK & C2B)
     - external reference (STK fallback)
+
+    C2B payments are owned by ADMIN_SHOP until claimed.
     """
 
     authentication_classes = [APIKeyAuthentication]
@@ -245,9 +257,21 @@ class ClaimPaymentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # 🔐 fetch admin intake app
+        try:
+            admin_app = ExternalApp.objects.get(name="ADMIN_SHOP")
+        except ExternalApp.DoesNotExist:
+            return Response(
+                {"error": "Admin intake app not configured"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # 🔍 allow access to:
+        # - app's own payments
+        # - admin shop (C2B intake)
         payment_qs = Payment.objects.filter(
-            app=app,
-            status="SUCCESS"
+            status="SUCCESS",
+            app__in=[app, admin_app]
         )
 
         # ✅ 1️⃣ Receipt lookup (BEST)
@@ -256,7 +280,7 @@ class ClaimPaymentView(APIView):
                 mpesa_receipt_number=receipt
             ).first()
 
-        # ✅ 2️⃣ Reference fallback (STK)
+        # ✅ 2️⃣ Reference fallback (STK only)
         else:
             payment = payment_qs.filter(
                 external_reference=reference
@@ -274,6 +298,14 @@ class ClaimPaymentView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # ⭐ Transfer ownership if C2B intake payment
+        if payment.app == admin_app:
+            payment.app = app
+            logger.info(
+                f"Ownership transferred to {app.name} "
+                f"for receipt {payment.mpesa_receipt_number}"
+            )
+
         payment.claimed = True
         payment.claimed_at = timezone.now()
         payment.save()
@@ -284,4 +316,68 @@ class ClaimPaymentView(APIView):
             "message": "Payment claimed successfully",
             "receipt": payment.mpesa_receipt_number
         })
+
+# class ClaimPaymentView(APIView):
+#     """
+#     Mark payment as claimed.
+
+#     Supports:
+#     - receipt (works for STK & C2B)
+#     - external reference (STK fallback)
+#     """
+
+#     authentication_classes = [APIKeyAuthentication]
+#     permission_classes = [IsAPIKeyAuthenticated]
+
+#     def post(self, request):
+#         app = request.user
+
+#         receipt = request.data.get("receipt")
+#         reference = request.data.get("reference")
+
+#         if not receipt and not reference:
+#             return Response(
+#                 {"error": "Provide receipt or reference"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+
+#         payment_qs = Payment.objects.filter(
+#             app=app,
+#             status="SUCCESS"
+#         )
+
+#         # ✅ 1️⃣ Receipt lookup (BEST)
+#         if receipt:
+#             payment = payment_qs.filter(
+#                 mpesa_receipt_number=receipt
+#             ).first()
+
+#         # ✅ 2️⃣ Reference fallback (STK)
+#         else:
+#             payment = payment_qs.filter(
+#                 external_reference=reference
+#             ).first()
+
+#         if not payment:
+#             return Response(
+#                 {"error": "Payment not found"},
+#                 status=status.HTTP_404_NOT_FOUND,
+#             )
+
+#         if payment.claimed:
+#             return Response(
+#                 {"message": "Payment already claimed"},
+#                 status=status.HTTP_400_BAD_REQUEST,
+#             )
+
+#         payment.claimed = True
+#         payment.claimed_at = timezone.now()
+#         payment.save()
+
+#         logger.info(f"PAYMENT CLAIMED: {payment.mpesa_receipt_number}")
+
+#         return Response({
+#             "message": "Payment claimed successfully",
+#             "receipt": payment.mpesa_receipt_number
+#         })
 
