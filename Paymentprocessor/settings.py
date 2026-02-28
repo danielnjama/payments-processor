@@ -1,5 +1,6 @@
 from pathlib import Path
 from decouple import config
+from corsheaders.defaults import default_headers
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,6 +19,18 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
 
 
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default="",
+).split(",")
+
+
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "X-API-KEY",
+]
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -27,12 +40,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'rest_framework',
     'payments',
     'rangefilter',
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -40,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'Paymentprocessor.urls'
