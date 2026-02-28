@@ -118,11 +118,17 @@ class STKPushView(APIView):
             raw_callback=response
         )
 
+        # return Response({
+        #     "message": "STK initiated",
+        #     "payment_id": payment.id,
+        #     "daraja_response": response
+        # }, status=status.HTTP_200_OK)
         return Response({
-            "message": "STK initiated",
-            "payment_id": payment.id,
-            "daraja_response": response
-        }, status=status.HTTP_200_OK)
+        "message": "STK initiated",
+        "payment_id": str(payment.id),
+        "checkout_request_id": response.get("CheckoutRequestID"),
+        "merchant_request_id": response.get("MerchantRequestID"),
+    }, status=status.HTTP_200_OK)
 
 
 
@@ -189,33 +195,40 @@ class VerifyPaymentView(APIView):
     def get(self, request):
         app = request.user  # ExternalApp from API key
 
-        receipt = request.GET.get("receipt")
-        reference = request.GET.get("reference")
-        phone = request.GET.get("phone")
+        # receipt = request.GET.get("receipt")
+        # reference = request.GET.get("reference")
+        # phone = request.GET.get("phone")
+        checkout_id = request.GET.get("checkout_id")
 
-        if not receipt and not reference:
-            return Response(
-                {"error": "Provide receipt or reference"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # if not receipt and not reference:
+        #     return Response(
+        #         {"error": "Provide receipt or reference"},
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
+        if checkout_id:
+            payment = Payment.objects.filter(
+                app=app,
+                checkout_request_id=checkout_id,
+                status="SUCCESS"
+            ).first()
 
-        payment = Payment.objects.filter(
-            app=app,
-            status="SUCCESS"
-        )
+        # payment = Payment.objects.filter(
+        #     app=app,
+        #     status="SUCCESS"
+        # )
 
         # 1️⃣ Receipt + optional phone
-        if receipt:
-            payment = payment.filter(mpesa_receipt_number=receipt)
+        # if receipt:
+        #     payment = payment.filter(mpesa_receipt_number=receipt)
 
-            if phone:
-                payment = payment.filter(phone_number=phone)
+        #     if phone:
+        #         payment = payment.filter(phone_number=phone)
 
-            payment = payment.first()
+        #     payment = payment.first()
 
         # 2️⃣ Reference lookup (STK initiated payments)
-        elif reference:
-            payment = payment.filter(external_reference=reference).first()
+        # elif reference:
+        #     payment = payment.filter(external_reference=reference).first()
 
         if not payment:
             return Response({"paid": False})
@@ -316,68 +329,4 @@ class ClaimPaymentView(APIView):
             "message": "Payment claimed successfully",
             "receipt": payment.mpesa_receipt_number
         })
-
-# class ClaimPaymentView(APIView):
-#     """
-#     Mark payment as claimed.
-
-#     Supports:
-#     - receipt (works for STK & C2B)
-#     - external reference (STK fallback)
-#     """
-
-#     authentication_classes = [APIKeyAuthentication]
-#     permission_classes = [IsAPIKeyAuthenticated]
-
-#     def post(self, request):
-#         app = request.user
-
-#         receipt = request.data.get("receipt")
-#         reference = request.data.get("reference")
-
-#         if not receipt and not reference:
-#             return Response(
-#                 {"error": "Provide receipt or reference"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-
-#         payment_qs = Payment.objects.filter(
-#             app=app,
-#             status="SUCCESS"
-#         )
-
-#         # ✅ 1️⃣ Receipt lookup (BEST)
-#         if receipt:
-#             payment = payment_qs.filter(
-#                 mpesa_receipt_number=receipt
-#             ).first()
-
-#         # ✅ 2️⃣ Reference fallback (STK)
-#         else:
-#             payment = payment_qs.filter(
-#                 external_reference=reference
-#             ).first()
-
-#         if not payment:
-#             return Response(
-#                 {"error": "Payment not found"},
-#                 status=status.HTTP_404_NOT_FOUND,
-#             )
-
-#         if payment.claimed:
-#             return Response(
-#                 {"message": "Payment already claimed"},
-#                 status=status.HTTP_400_BAD_REQUEST,
-#             )
-
-#         payment.claimed = True
-#         payment.claimed_at = timezone.now()
-#         payment.save()
-
-#         logger.info(f"PAYMENT CLAIMED: {payment.mpesa_receipt_number}")
-
-#         return Response({
-#             "message": "Payment claimed successfully",
-#             "receipt": payment.mpesa_receipt_number
-#         })
 
