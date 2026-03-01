@@ -167,6 +167,7 @@ def stk_callback(request):
 
         else:
             payment.status = "FAILED"
+            payment.failure_reason = result_desc
             logger.warning(f"Payment FAILED: {result_desc}")
 
         payment.save()
@@ -231,17 +232,40 @@ class VerifyPaymentView(APIView):
         #     payment = payment.filter(external_reference=reference).first()
 
         if not payment:
-            return Response({"paid": False})
+            return Response({"paid": False,  "failed": False})
 
-        return Response({
-            "paid": True,
-            "amount": payment.amount,
-            "phone": payment.phone_number,
-            "receipt": payment.mpesa_receipt_number,
-            "reference": payment.external_reference,
-            "claimed": payment.claimed,
-            "date": payment.created_at,
-        })
+        # return Response({
+        #     "paid": True,
+        #     "amount": payment.amount,
+        #     "phone": payment.phone_number,
+        #     "receipt": payment.mpesa_receipt_number,
+        #     "reference": payment.external_reference,
+        #     "claimed": payment.claimed,
+        #     "date": payment.created_at,
+        # })
+                # SUCCESS
+        if payment.status == "SUCCESS":
+            return Response({
+                "paid": True,
+                "failed": False,
+                "amount": payment.amount,
+                "phone": payment.phone_number,
+                "receipt": payment.mpesa_receipt_number,
+                "reference": payment.external_reference,
+                "claimed": payment.claimed,
+                "date": payment.created_at,
+            })
+
+        # FAILED
+        if payment.status == "FAILED":
+            return Response({
+                "paid": False,
+                "failed": True,
+                "message": payment.raw_callback.get("ResultDesc", "Transaction failed")
+            })
+
+        # Still Pending
+        return Response({"paid": False,"failed": False})
 
 
 class ClaimPaymentView(APIView):
