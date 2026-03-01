@@ -97,12 +97,31 @@ class STKPushView(APIView):
 
         daraja = DarajaService()
 
-        response = daraja.stk_push(
-            phone_number=data["phone_number"],
-            amount=data["amount"],
-            reference=data["reference"],
-            description=data["description"],
-        )
+        # response = daraja.stk_push(
+        #     phone_number=data["phone_number"],
+        #     amount=data["amount"],
+        #     reference=data["reference"],
+        #     description=data["description"],
+        # )
+        try:
+            response = daraja.stk_push(
+                phone_number=data["phone_number"],
+                amount=data["amount"],
+                reference=data["reference"],
+                description=data["description"],
+            )
+
+            if response.get("ResponseCode") != "0":
+                return Response({
+                    "success": False,
+                    "message": response.get("errorMessage", "STK push failed")
+                }, status=400)
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "message": str(e)
+            }, status=400)
 
         # Save initial payment record
         payment = Payment.objects.create(
@@ -124,6 +143,7 @@ class STKPushView(APIView):
         #     "daraja_response": response
         # }, status=status.HTTP_200_OK)
         return Response({
+        "success": True,
         "message": "STK initiated",
         "payment_id": str(payment.id),
         "checkout_request_id": response.get("CheckoutRequestID"),
@@ -243,7 +263,7 @@ class VerifyPaymentView(APIView):
         #     "claimed": payment.claimed,
         #     "date": payment.created_at,
         # })
-                # SUCCESS
+        # SUCCESS
         if payment.status == "SUCCESS":
             return Response({
                 "paid": True,
