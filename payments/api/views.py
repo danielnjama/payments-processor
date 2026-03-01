@@ -230,7 +230,7 @@ class VerifyPaymentView(APIView):
             payment = Payment.objects.filter(
                 app=app,
                 checkout_request_id=checkout_id,
-                status="SUCCESS"
+                # status="SUCCESS"
             ).first()
 
         # payment = Payment.objects.filter(
