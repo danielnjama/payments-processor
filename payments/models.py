@@ -71,6 +71,8 @@ class Payment(models.Model):
 
     app = models.ForeignKey(ExternalApp, on_delete=models.CASCADE, null=True, blank=True)
 
+    failure_reason = models.TextField(null=True, blank=True)
+
 
     def __str__(self):
         return f"{self.phone_number} - {self.amount} - {self.status}"
