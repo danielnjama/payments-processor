@@ -371,6 +371,8 @@ class ClaimPaymentView(APIView):
 
         return Response({
             "message": "Payment claimed successfully",
-            "receipt": payment.mpesa_receipt_number
+            "receipt": payment.mpesa_receipt_number,
+            "amount": payment.amount,
+            "phone": payment.phone_number
         })
 
